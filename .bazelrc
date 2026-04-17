@@ -1,4 +1,7 @@
 build --define=tf=1
+build --cxxopt=-std=c++17
+build --host_cxxopt=-std=c++17
+
 test -c dbg
 
 # Some of the Bazel rules used to precompile TensorFlow don't respect Bazel's

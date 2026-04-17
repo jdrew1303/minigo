@@ -16,6 +16,7 @@
 
 #include <cstdint>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_split.h"
@@ -97,7 +98,7 @@ class FactoryRegistry {
 
   std::unique_ptr<ModelFactory> NewModelFactory(const std::string& engine,
                                                 const std::string& device)
-      EXCLUSIVE_LOCKS_REQUIRED(&mutex_) {
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
     if (engine == "random") {
       return absl::make_unique<RandomDualNetFactory>();
     }
@@ -125,7 +126,7 @@ class FactoryRegistry {
   }
 
   absl::Mutex mutex_;
-  std::vector<RegisteredFactory> factories_ GUARDED_BY(&mutex_);
+  std::vector<RegisteredFactory> factories_ ABSL_GUARDED_BY(mutex_);
 };
 
 ModelDefinition CreateRandomModelDefinition(absl::string_view descriptor) {
