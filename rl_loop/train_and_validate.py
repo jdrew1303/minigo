@@ -25,7 +25,7 @@ import time
 sys.path.insert(0, '.')
 
 from absl import app, flags
-from tensorflow import gfile
+import tensorflow as tf; gfile = tf.io.gfile
 import tensorflow as tf
 from rl_loop import fsdb
 import mask_flags

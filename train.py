@@ -25,7 +25,6 @@ from absl import app, flags
 import numpy as np
 import tensorflow as tf
 
-import bigtable_input
 import dual_net
 import preprocessing
 import utils
@@ -56,10 +55,6 @@ flags.DEFINE_float('filter_amount', 1.0,
 flags.DEFINE_string('export_path', None,
                     'Where to export the model after training.')
 
-flags.DEFINE_bool('use_bt', False,
-                  'Whether to use Bigtable as input.  '
-                  '(Only supported with --use_tpu, currently.)')
-
 flags.DEFINE_bool('freeze', False,
                   'Whether to freeze the graph at the end of training.')
 
@@ -74,12 +69,6 @@ flags.register_multi_flags_validator(
     lambda flags: not flags['use_trt'] or flags['trt_max_batch_size'],
     'trt_max_batch_size must be set if use_trt is true')
 
-
-flags.register_multi_flags_validator(
-    ['use_bt', 'use_tpu'],
-    lambda flags: flags['use_tpu'] if flags['use_bt'] else True,
-    '`use_bt` flag only valid with `use_tpu` as well')
-
 @flags.multi_flags_validator(
     ['num_examples', 'steps_to_train', 'filter_amount'],
     '`num_examples` requires `steps_to_train==0` and `filter_amount==1.0`')
@@ -87,17 +76,6 @@ def _example_flags_validator(flags_dict):
     if not flags_dict['num_examples']:
         return True
     return not flags_dict['steps_to_train'] and flags_dict['filter_amount'] == 1.0
-
-@flags.multi_flags_validator(
-    ['use_bt', 'cbt_project', 'cbt_instance', 'cbt_table'],
-    message='Cloud Bigtable configuration flags not correct')
-def _bt_checker(flags_dict):
-    if not flags_dict['use_bt']:
-        return True
-    return (flags_dict['cbt_project']
-            and flags_dict['cbt_instance']
-            and flags_dict['cbt_table'])
-
 
 # From dual_net.py
 flags.declare_key_flag('work_dir')
@@ -179,22 +157,8 @@ def train(*tf_records: "Records to train on"):
         effective_batch_size *= FLAGS.num_tpu_cores
 
     if FLAGS.use_tpu:
-        if FLAGS.use_bt:
-            def _input_fn(params):
-                games = bigtable_input.GameQueue(
-                    FLAGS.cbt_project, FLAGS.cbt_instance, FLAGS.cbt_table)
-                games_nr = bigtable_input.GameQueue(
-                    FLAGS.cbt_project, FLAGS.cbt_instance, FLAGS.cbt_table + '-nr')
-                return preprocessing.get_tpu_bt_input_tensors(
-                    games,
-                    games_nr,
-                    params['batch_size'],
-                    params['input_layout'],
-                    number_of_games=FLAGS.window_size,
-                    random_rotation=True)
-        else:
-            def _input_fn(params):
-                return preprocessing.get_tpu_input_tensors(
+        def _input_fn(params):
+            return preprocessing.get_tpu_input_tensors(
                     params['batch_size'],
                     params['input_layout'],
                     tf_records,
@@ -229,25 +193,7 @@ def train(*tf_records: "Records to train on"):
                  steps or '?', effective_batch_size,
                  (steps * effective_batch_size) if steps else '?')
 
-    if FLAGS.use_bt:
-        games = bigtable_input.GameQueue(
-            FLAGS.cbt_project, FLAGS.cbt_instance, FLAGS.cbt_table)
-        if not games.read_wait_cell():
-            games.require_fresh_games(20000)
-        latest_game = games.latest_game_number
-        index_from = max(latest_game, games.read_wait_cell())
-        print("== Last game before training:", latest_game, flush=True)
-        print("== Wait cell:", games.read_wait_cell(), flush=True)
-
-    try:
-        estimator.train(_input_fn, steps=steps, hooks=hooks)
-        if FLAGS.use_bt:
-            bigtable_input.set_fresh_watermark(games, index_from,
-                                               FLAGS.window_size)
-    except:
-        if FLAGS.use_bt:
-            games.require_fresh_games(0)
-        raise
+    estimator.train(_input_fn, steps=steps, hooks=hooks)
 
 
 def main(argv):

@@ -684,12 +684,12 @@ def export_model(model_path):
     estimator = tf.estimator.Estimator(model_fn, model_dir=FLAGS.work_dir,
                                        params=FLAGS.flag_values_dict())
     latest_checkpoint = estimator.latest_checkpoint()
-    all_checkpoint_files = tf.gfile.Glob(latest_checkpoint + '*')
+    all_checkpoint_files = tf.io.gfile.Glob(latest_checkpoint + '*')
     for filename in all_checkpoint_files:
         suffix = filename.partition(latest_checkpoint)[2]
         destination_path = model_path + suffix
         print('Copying {} to {}'.format(filename, destination_path))
-        tf.gfile.Copy(filename, destination_path)
+        tf.io.gfile.Copy(filename, destination_path)
 
 
 def freeze_graph(model_path, use_trt=False, trt_max_batch_size=8,

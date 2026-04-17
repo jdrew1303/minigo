@@ -20,13 +20,10 @@ sys.path.insert(0, '.')
 from rl_loop import fsdb
 import mask_flags
 
-# From rl_loop/fsdb.py
-flags.declare_key_flag('bucket_name')
-
 # "_nr" signifies "No Resign", aka calibration game, which will use a different
 # set of flags and will not update its flags from a remote flagfile.
-flags.DEFINE_enum('mode', None, ['cc', 'tpu', 'tpu_nr'],
-                  'Which setup to use: cc on GPU or cc/py on TPU.')
+flags.DEFINE_enum('mode', None, ['cc'],
+                  'Which setup to use: cc on GPU.')
 
 FLAGS = flags.FLAGS
 
@@ -53,37 +50,10 @@ def run_cc():
         '--flagfile=rl_loop/distributed_flags'])
 
 
-def run_tpu(no_resign=False):
-    os.environ['GRPC_DEFAULT_SSL_ROOTS_FILE_PATH'] = '/etc/ssl/certs/ca-certificates.crt'
-    assert 'KUBE_GOOGLE_CLOUD_TPU_ENDPOINTS' in os.environ
-    tpu_name = os.environ['KUBE_GOOGLE_CLOUD_TPU_ENDPOINTS']
-    flagset = [
-        'bazel-bin/cc/selfplay',
-        '--mode=selfplay',
-        '--model=tpu:{},{}'.format(tpu_name, os.path.join(fsdb.working_dir(), 'model.ckpt-%d.pb')),
-        '--output_dir={}'.format(fsdb.selfplay_dir()),
-        '--holdout_dir={}'.format(fsdb.holdout_dir()),
-        '--sgf_dir={}'.format(fsdb.sgf_dir()),
-        '--run_forever=true']
-
-    if no_resign:
-        flagset.extend([
-            '--flagfile=rl_loop/distributed_flags_nr'])
-    else:
-        flagset.extend([
-            '--flags_path={}'.format(fsdb.flags_path()),
-            '--flagfile=rl_loop/distributed_flags'])
-
-    mask_flags.checked_run(flagset)
-
 def main(unused_argv):
-    flags.mark_flags_as_required(['bucket_name', 'mode'])
+    flags.mark_flags_as_required(['mode'])
     if FLAGS.mode == 'cc':
         run_cc()
-    elif FLAGS.mode == 'tpu':
-        run_tpu(no_resign=False)
-    elif FLAGS.mode == 'tpu_nr':
-        run_tpu(no_resign=True)
 
 
 if __name__ == '__main__':

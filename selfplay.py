@@ -22,7 +22,7 @@ import socket
 import time
 
 from absl import app, flags
-from tensorflow import gfile
+import tensorflow as tf; gfile = tf.io.gfile
 
 import coords
 import dual_net

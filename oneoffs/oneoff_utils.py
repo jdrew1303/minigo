@@ -14,7 +14,7 @@
 
 import os
 
-from tensorflow import gfile
+import tensorflow as tf; gfile = tf.io.gfile
 from tqdm import tqdm
 
 import dual_net
