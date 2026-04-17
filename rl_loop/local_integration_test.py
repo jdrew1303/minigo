@@ -25,7 +25,7 @@ import tempfile
 sys.path.insert(0, '.')
 
 from absl import app
-from tensorflow import gfile
+import tensorflow as tf; gfile = tf.io.gfile
 
 from rl_loop import example_buffer as eb
 from rl_loop import fsdb

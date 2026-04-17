@@ -119,7 +119,7 @@ def wait_for_training_examples(state, num_games):
     pattern = os.path.join(model_dir, '*', '*', '*.tfrecord.zz')
     for i in itertools.count():
         try:
-            paths = sorted(tf.gfile.Glob(pattern))
+            paths = sorted(tf.io.gfile.Glob(pattern))
         except tf.errors.OpError:
             paths = []
         if len(paths) >= num_games:
@@ -187,7 +187,7 @@ def sample_training_examples(state):
     chunk_pattern = os.path.join(
         FLAGS.golden_chunk_dir,
         '{}-*-of-*.tfrecord.zz'.format(state.train_model_name))
-    chunk_paths = sorted(tf.gfile.Glob(chunk_pattern))
+    chunk_paths = sorted(tf.io.gfile.Glob(chunk_pattern))
     assert len(chunk_paths) == FLAGS.num_write_threads
 
     return (num_examples, chunk_paths)
@@ -198,12 +198,12 @@ def append_timestamp(elapsed, model_name):
   # was trained. GCS files are immutable, so we have to do the append manually.
   timestamps_path = os.path.join(FLAGS.model_dir, 'train_times.txt')
   try:
-    with tf.gfile.Open(timestamps_path, 'r') as f:
+    with tf.io.gfile.Open(timestamps_path, 'r') as f:
       timestamps = f.read()
   except tf.errors.NotFoundError:
       timestamps = ''
   timestamps += '{:.3f} {}\n'.format(elapsed, model_name)
-  with tf.gfile.Open(timestamps_path, 'w') as f:
+  with tf.io.gfile.Open(timestamps_path, 'w') as f:
       f.write(timestamps)
 
 

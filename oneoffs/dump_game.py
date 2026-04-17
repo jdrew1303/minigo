@@ -36,7 +36,7 @@ def main(argv):
     # do it if we need to read from GCS.
     path = argv[1]
     if path.startswith('gs://'):
-        from tensorflow import gfile
+        import tensorflow as tf; gfile = tf.io.gfile
         f = gfile.GFile(path, 'r')
     else:
         f = open(path, 'r')

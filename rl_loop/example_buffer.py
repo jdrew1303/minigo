@@ -140,7 +140,7 @@ class ExampleBuffer():
 
 
 def files_for_model(model):
-    return tf.gfile.Glob(os.path.join(LOCAL_DIR, model[1], '*.zz'))
+    return tf.io.gfile.Glob(os.path.join(LOCAL_DIR, model[1], '*.zz'))
 
 
 def smart_rsync(
@@ -161,7 +161,7 @@ def time_rsync(from_date,
     source_dir = source_dir or fsdb.selfplay_dir()
     while from_date < dt.datetime.utcnow():
         src = os.path.join(source_dir, from_date.strftime("%Y-%m-%d-%H"))
-        if tf.gfile.Exists(src):
+        if tf.io.gfile.Exists(src):
             _rsync_dir(src, os.path.join(
                 dest_dir, from_date.strftime("%Y-%m-%d-%H")))
         from_date = from_date + dt.timedelta(hours=1)
@@ -185,13 +185,13 @@ def _determine_chunk_to_make(write_dir):
     # Last model is N.  N+1 (should be) training.  We should gather games for N+2.
     chunk_to_make = os.path.join(write_dir, str(
         models[-1][0] + 1) + '.tfrecord.zz')
-    if not tf.gfile.Exists(chunk_to_make):
+    if not tf.io.gfile.Exists(chunk_to_make):
         # N+1 is missing.  Write it out ASAP
         print("Making chunk ASAP:", chunk_to_make)
         return chunk_to_make, True
     chunk_to_make = os.path.join(write_dir, str(
         models[-1][0] + 2) + '.tfrecord.zz')
-    while tf.gfile.Exists(chunk_to_make):
+    while tf.io.gfile.Exists(chunk_to_make):
         print("Chunk for next model ({}) already exists. Sleeping.".format(
             chunk_to_make))
         time.sleep(5 * 60)
@@ -228,8 +228,8 @@ def fill_and_wait_time(bufsize=EXAMPLES_PER_GENERATION,
         start_from = dt.datetime.utcnow()
 
     hours = fsdb.get_hour_dirs()
-    files = (tf.gfile.Glob(os.path.join(LOCAL_DIR, d, "*.zz"))
-             for d in reversed(hours) if tf.gfile.Exists(os.path.join(LOCAL_DIR, d)))
+    files = (tf.io.gfile.Glob(os.path.join(LOCAL_DIR, d, "*.zz"))
+             for d in reversed(hours) if tf.io.gfile.Exists(os.path.join(LOCAL_DIR, d)))
     files = itertools.islice(files, get_window_size(chunk_to_make))
 
     models = fsdb.get_models()
@@ -242,7 +242,7 @@ def fill_and_wait_time(bufsize=EXAMPLES_PER_GENERATION,
             time_rsync(start_from - dt.timedelta(minutes=60))
         start_from = dt.datetime.utcnow()
         hours = sorted(fsdb.get_hour_dirs(LOCAL_DIR))
-        new_files = list(map(lambda d: tf.gfile.Glob(
+        new_files = list(map(lambda d: tf.io.gfile.Glob(
             os.path.join(LOCAL_DIR, d, '*.zz')), hours[-2:]))
         buf.update(list(itertools.chain.from_iterable(new_files)))
         if fast_write:
@@ -312,10 +312,10 @@ def make_chunk_for(output_dir=LOCAL_DIR,
     files = []
     for _, model in sorted(models, reverse=True):
         local_model_dir = os.path.join(local_dir, model)
-        if not tf.gfile.Exists(local_model_dir):
+        if not tf.io.gfile.Exists(local_model_dir):
             print("Rsyncing", model)
             _rsync_dir(os.path.join(game_dir, model), local_model_dir)
-        files.extend(tf.gfile.Glob(os.path.join(local_model_dir, '*.zz')))
+        files.extend(tf.io.gfile.Glob(os.path.join(local_model_dir, '*.zz')))
         print("{}: {} games".format(model, len(files)))
         if len(files) * 200 * sampling_frac > positions:
             break

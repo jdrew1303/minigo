@@ -14,111 +14,138 @@
 
 """Filesystem DB: poor man's worker coordination strategy.
 
-This module works equivalently with local filesystems and GCS.
+This module works with local filesystems.
 """
 import os
 import sys
 sys.path.insert(0, '.')
 
 from absl import flags
-from tensorflow import gfile
+import tensorflow as tf
 import re
+
+gfile = tf.io.gfile
 
 from rl_loop import shipname
 
 flags.DEFINE_string(
     'base_dir', None,
-    'Root directory if using local FS as the database. '
-    'Leave blank if using bucket_name.')
-
-flags.DEFINE_string(
-    'bucket_name', None,
-    'Bucket name if using GCS as the filesystem DB. '
-    'Leave blank if using base_dir.')
-
-flags.register_multi_flags_validator(
-    ['base_dir', 'bucket_name'],
-    lambda flags: bool(flags['base_dir']) != bool(flags['bucket_name']),
-    'Exactly one of --base_dir, --bucket_name must be set!')
+    'Root directory if using local FS as the database.')
 
 FLAGS = flags.FLAGS
 
-def switch_base(new_base):
-    if FLAGS.base_dir:
-        FLAGS.base_dir = new_base
-    else:
-        FLAGS.bucket_name = new_base
+class FSDB:
+    def __init__(self, base_dir):
+        self.base_dir = base_dir
 
-def _with_base(*args):
-    def inner():
-        base_dir = FLAGS.base_dir or 'gs://{}'.format(FLAGS.bucket_name)
-        return os.path.join(base_dir, *args)
-    return inner
+    def _path(self, *args):
+        return os.path.join(self.base_dir, *args)
 
+    def working_dir(self):
+        return self._path('work_dir')
 
-# Functions to compute various important directories, based on FLAGS input.
-working_dir = _with_base('work_dir')
-models_dir = _with_base('models')
-selfplay_dir = _with_base('data', 'selfplay')
-holdout_dir = _with_base('data', 'holdout')
-sgf_dir = _with_base('sgf')
-eval_dir = _with_base('sgf', 'eval')
-golden_chunk_dir = _with_base('data', 'golden_chunks')
-flags_path = _with_base('flags.txt')
-eval_flags_path = _with_base('eval-flags.txt')
+    def models_dir(self):
+        return self._path('models')
 
+    def selfplay_dir(self):
+        return self._path('data', 'selfplay')
 
-def get_pbs():
-    all_pbs = gfile.Glob(os.path.join(models_dir(), '*.pb'))
-    return all_pbs
+    def holdout_dir(self):
+        return self._path('data', 'holdout')
 
+    def sgf_dir(self):
+        return self._path('sgf')
 
-def get_models():
-    """Finds all models, returning a list of model number and names
-    sorted increasing.
+    def eval_dir(self):
+        return self._path('sgf', 'eval')
 
-    Returns: [(13, 000013-modelname), (17, 000017-modelname), ...etc]
-    """
-    all_models = gfile.Glob(os.path.join(models_dir(), '*.meta'))
-    model_filenames = [os.path.basename(m) for m in all_models]
-    model_numbers_names = sorted([
-        (shipname.detect_model_num(m), shipname.detect_model_name(m))
-        for m in model_filenames])
-    return model_numbers_names
+    def golden_chunk_dir(self):
+        return self._path('data', 'golden_chunks')
 
+    def flags_path(self):
+        return self._path('flags.txt')
 
-def get_latest_model():
-    """Finds the latest model, returning its model number and name
+    def eval_flags_path(self):
+        return self._path('eval-flags.txt')
 
-    Returns: (17, 000017-modelname)
-    """
-    return get_models()[-1]
+    def get_pbs(self):
+        all_pbs = gfile.Glob(os.path.join(self.models_dir(), '*.pb'))
+        return all_pbs
 
+    def get_models(self):
+        """Finds all models, returning a list of model number and names
+        sorted increasing.
 
-def get_latest_pb():
-    pb = os.path.basename(get_pbs()[-1])
-    return shipname.detect_model_num(pb), pb
+        Returns: [(13, 000013-modelname), (17, 000017-modelname), ...etc]
+        """
+        all_models = gfile.Glob(os.path.join(self.models_dir(), '*.meta'))
+        model_filenames = [os.path.basename(m) for m in all_models]
+        model_numbers_names = sorted([
+            (shipname.detect_model_num(m), shipname.detect_model_name(m))
+            for m in model_filenames])
+        return model_numbers_names
 
+    def get_latest_model(self):
+        """Finds the latest model, returning its model number and name
 
-def get_model(model_num):
-    """Given a model number 17, returns its full name 000017-modelname."""
-    model_names_by_num = dict(get_models())
-    return model_names_by_num[model_num]
+        Returns: (17, 000017-modelname)
+        """
+        return self.get_models()[-1]
 
+    def get_latest_pb(self):
+        pbs = self.get_pbs()
+        if not pbs:
+            return None
+        pb = os.path.basename(pbs[-1])
+        return shipname.detect_model_num(pb), pb
 
-def get_hour_dirs(root=None):
-    """Gets the directories under selfplay_dir that match YYYY-MM-DD-HH."""
-    root = root or selfplay_dir()
-    return list(filter(lambda s: re.match(r"\d{4}-\d{2}-\d{2}-\d{2}", s),
-                       gfile.ListDirectory(root)))
+    def get_model(self, model_num):
+        """Given a model number 17, returns its full name 000017-modelname."""
+        model_names_by_num = dict(self.get_models())
+        return model_names_by_num[model_num]
 
+    def get_hour_dirs(self, root=None):
+        """Gets the directories under selfplay_dir that match YYYY-MM-DD-HH."""
+        root = root or self.selfplay_dir()
+        if not gfile.Exists(root):
+            return []
+        return list(filter(lambda s: re.match(r"\d{4}-\d{2}-\d{2}-\d{2}", s),
+                           gfile.ListDirectory(root)))
 
-def get_games(model_name):
-    return gfile.Glob(os.path.join(selfplay_dir(), model_name, '*.zz'))
+    def get_games(self, model_name):
+        return gfile.Glob(os.path.join(self.selfplay_dir(), model_name, '*.zz'))
 
+    def game_counts(self, n_back=20):
+        """Prints statistics for the most recent n_back models"""
+        for _, model_name in self.get_models()[-n_back:]:
+            games = self.get_games(model_name)
+            print("Model: {}, Games: {}".format(model_name, len(games)))
 
-def game_counts(n_back=20):
-    """Prints statistics for the most recent n_back models"""
-    for _, model_name in get_models[-n_back:]:
-        games = get_games(model_name)
-        print("Model: {}, Games: {}".format(model_name, len(games)))
+# For backward compatibility and ease of use with singleton pattern if desired
+_instance = None
+
+def _get_instance():
+    global _instance
+    if _instance is None:
+        if FLAGS.base_dir is None:
+            raise ValueError("base_dir must be set!")
+        _instance = FSDB(FLAGS.base_dir)
+    return _instance
+
+def working_dir(): return _get_instance().working_dir()
+def models_dir(): return _get_instance().models_dir()
+def selfplay_dir(): return _get_instance().selfplay_dir()
+def holdout_dir(): return _get_instance().holdout_dir()
+def sgf_dir(): return _get_instance().sgf_dir()
+def eval_dir(): return _get_instance().eval_dir()
+def golden_chunk_dir(): return _get_instance().golden_chunk_dir()
+def flags_path(): return _get_instance().flags_path()
+def eval_flags_path(): return _get_instance().eval_flags_path()
+def get_pbs(): return _get_instance().get_pbs()
+def get_models(): return _get_instance().get_models()
+def get_latest_model(): return _get_instance().get_latest_model()
+def get_latest_pb(): return _get_instance().get_latest_pb()
+def get_model(model_num): return _get_instance().get_model(model_num)
+def get_hour_dirs(root=None): return _get_instance().get_hour_dirs(root)
+def get_games(model_name): return _get_instance().get_games(model_name)
+def game_counts(n_back=20): return _get_instance().game_counts(n_back)

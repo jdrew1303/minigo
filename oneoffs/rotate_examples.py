@@ -54,16 +54,16 @@ def batched_reader(file_path):
 
 
 def get_size(path):
-    return tf.gfile.Stat(path).length
+    return tf.io.gfile.Stat(path).length
 
 
 def convert(paths):
     position, in_path, out_path = paths
-    assert tf.gfile.Exists(in_path)
-    assert tf.gfile.Exists(os.path.dirname(out_path))
+    assert tf.io.gfile.Exists(in_path)
+    assert tf.io.gfile.Exists(os.path.dirname(out_path))
 
     in_size = get_size(in_path)
-    if tf.gfile.Exists(out_path):
+    if tf.io.gfile.Exists(out_path):
         # Make sure out_path is about the size of in_path
         size = get_size(out_path)
         error = (size - in_size) / (in_size + 1)
@@ -131,7 +131,7 @@ def compare(pair):
 
 
 def main(remaining_argv):
-    paths = sorted(tf.gfile.ListDirectory(FLAGS.in_dir))
+    paths = sorted(tf.io.gfile.ListDirectory(FLAGS.in_dir))
     total = len(paths)
     pairs = []
     for i, path in enumerate(paths):

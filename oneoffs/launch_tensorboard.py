@@ -42,7 +42,7 @@ def main(argv):
     root_dir = argv[1]
     pattern = os.path.join(root_dir, '*', 'work_dir')
     if root_dir.startswith('gs://'):
-        from tensorflow import gfile
+        import tensorflow as tf; gfile = tf.io.gfile
         dirs = gfile.Glob(pattern)
     else:
         import glob

@@ -66,10 +66,10 @@ def main(unused_argv):
     in_path = FLAGS.in_path
     out_path = FLAGS.out_path
 
-    assert tf.gfile.Exists(in_path)
+    assert tf.io.gfile.Exists(in_path)
     # TODO(amj): Why does ensure_dir_exists skip gs paths?
-    #tf.gfile.MakeDirs(os.path.dirname(out_path))
-    #assert tf.gfile.Exists(os.path.dirname(out_path))
+    #tf.io.gfile.MakeDirs(os.path.dirname(out_path))
+    #assert tf.io.gfile.Exists(os.path.dirname(out_path))
 
     policy_err = []
     value_err = []
