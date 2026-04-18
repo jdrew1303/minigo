@@ -263,14 +263,7 @@ minigo_cc_library(
 
 minigo_cc_library(
     name = "tf_utils",
-    srcs = select({
-               "//cc/config:enable_tf": ["tf_utils.cc"],
-               "//conditions:default": ["tf_utils_dummy.cc"],
-           }) +
-           select({
-               "//cc/config:enable_bt": ["tf_bt_utils.cc"],
-               "//conditions:default": ["tf_bt_utils_dummy.cc"],
-           }),
+    srcs = ["tf_utils_dummy.cc"],
     hdrs = ["tf_utils.h"],
     deps = [
                ":base",
@@ -279,16 +272,8 @@ minigo_cc_library(
                "//cc/file",
                "//cc/model",
                "@com_google_absl//absl/strings:str_format",
-           ] + select({
-               "//cc/config:enable_bt": ["@com_github_googlecloudplatform_google_cloud_cpp//google/cloud/bigtable:bigtable_client"],
-               "//conditions:default": [],
-           }) +
-           select({
-               "//cc/config:enable_tf": ["//cc/tensorflow"],
-               "//conditions:default": [],
-           }),
+           ],
 )
-
 minigo_cc_library(
     name = "tiny_set",
     hdrs = ["tiny_set.h"],
@@ -548,24 +533,6 @@ minigo_cc_binary(
     ],
 )
 
-cc_binary(
-    name = "sample_records",
-    srcs = ["sample_records.cc"],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":base",
-        ":init",
-        ":logging",
-        ":random",
-        "//cc/async:thread",
-        "//cc/tensorflow",
-        "@com_github_gflags_gflags//:gflags",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/strings:str_format",
-    ],
-)
-
 minigo_cc_binary(
     name = "simple_example",
     srcs = ["simple_example.cc"],
@@ -599,18 +566,5 @@ minigo_cc_binary(
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
-    ],
-)
-
-minigo_cc_binary(
-    name = "tpu_test",
-    srcs = ["tpu_test.cc"],
-    tags = ["manual"],
-    deps = [
-        "//cc/tensorflow",
-        "@com_github_gflags_gflags//:gflags",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/strings:str_format",
     ],
 )

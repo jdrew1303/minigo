@@ -1,0 +1,20 @@
+cc_library(
+    name = "tf_utils",
+    srcs = select({
+               "//cc/config:enable_tf": ["tf_utils_dummy.cc"], # Dummy for now
+               "//conditions:default": ["tf_utils_dummy.cc"],
+           }) +
+           select({
+               "//cc/config:enable_bt": ["tf_bt_utils_dummy.cc"], # Dummy for now
+               "//conditions:default": ["tf_bt_utils_dummy.cc"],
+           }),
+    hdrs = ["tf_utils.h"],
+    deps = [
+               ":base",
+               ":logging",
+               ":game",
+               "//cc/file",
+               "//cc/model",
+               "@com_google_absl//absl/strings:str_format",
+           ],
+)

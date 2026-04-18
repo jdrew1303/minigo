@@ -33,7 +33,7 @@ class Semaphore {
   }
 
  private:
-  bool is_non_zero() const EXCLUSIVE_LOCKS_REQUIRED(&mutex_) {
+  bool is_non_zero() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
     return count_ != 0;
   }
 
