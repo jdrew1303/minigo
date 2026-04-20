@@ -1,3 +1,5 @@
+#include "absl/base/thread_annotations.h"
+#include "absl/base/thread_annotations.h"
 // Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -345,13 +347,13 @@ class Selfplayer {
  public:
   Selfplayer();
 
-  void Run() LOCKS_EXCLUDED(&mutex_);
+  void Run() ABSL_LOCKS_EXCLUDED(mutex_);
 
   std::unique_ptr<SelfplayGame> StartNewGame(bool verbose)
-      LOCKS_EXCLUDED(&mutex_);
+      ABSL_LOCKS_EXCLUDED(mutex_);
 
   void EndGame(std::unique_ptr<SelfplayGame> selfplay_game)
-      LOCKS_EXCLUDED(&mutex_);
+      ABSL_LOCKS_EXCLUDED(mutex_);
 
   // Exectutes `fn` on `parallel_search` threads in parallel on a shared
   // `ShardedExecutor`.
@@ -368,25 +370,25 @@ class Selfplayer {
   void ReleaseModel(std::unique_ptr<Model> model);
 
  private:
-  void ParseFlags() EXCLUSIVE_LOCKS_REQUIRED(&mutex_);
+  void ParseFlags() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   FeatureDescriptor InitializeModels();
   void CreateModels(const std::string& path);
   void CheckAbortFile();
 
   mutable absl::Mutex mutex_;
-  MctsTree::Options tree_options_ GUARDED_BY(&mutex_);
-  int num_games_remaining_ GUARDED_BY(&mutex_) = 0;
-  Random rnd_ GUARDED_BY(&mutex_);
-  WinStats win_stats_ GUARDED_BY(&mutex_);
+  MctsTree::Options tree_options_ ABSL_GUARDED_BY(mutex_);
+  int num_games_remaining_ ABSL_GUARDED_BY(mutex_) = 0;
+  Random rnd_ ABSL_GUARDED_BY(mutex_);
+  WinStats win_stats_ ABSL_GUARDED_BY(mutex_);
   ThreadSafeQueue<std::unique_ptr<SelfplayGame>> output_queue_;
   ShardedExecutor executor_;
 
   ThreadSafeQueue<std::unique_ptr<Model>> models_;
 
   // The latest path that matches the model pattern.
-  std::string latest_model_name_ GUARDED_BY(&mutex_);
+  std::string latest_model_name_ ABSL_GUARDED_BY(mutex_);
 
-  int next_game_id_ GUARDED_BY(&mutex_) = 1;
+  int next_game_id_ ABSL_GUARDED_BY(mutex_) = 1;
 
   std::unique_ptr<DirectoryWatcher> directory_watcher_;
   std::unique_ptr<PollThread> abort_file_watcher_;

@@ -1,3 +1,5 @@
+#include "absl/base/thread_annotations.h"
+#include "absl/base/thread_annotations.h"
 // Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -73,12 +75,12 @@ class ThreadSafeQueue {
   }
 
  private:
-  bool has_elements() const EXCLUSIVE_LOCKS_REQUIRED(&m_) {
+  bool has_elements() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(m_) {
     return !queue_.empty();
   }
 
   mutable absl::Mutex m_;
-  std::queue<T> queue_ GUARDED_BY(&m_);
+  std::queue<T> queue_ ABSL_GUARDED_BY(m_);
 };
 
 }  // namespace minigo

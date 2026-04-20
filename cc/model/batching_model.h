@@ -1,3 +1,5 @@
+#include "absl/base/thread_annotations.h"
+#include "absl/base/thread_annotations.h"
 // Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -67,23 +69,23 @@ class ModelBatcher {
     return model_impl_->feature_descriptor();
   }
 
-  void StartGame() LOCKS_EXCLUDED(&mutex_);
-  void EndGame() LOCKS_EXCLUDED(&mutex_);
+  void StartGame() ABSL_LOCKS_EXCLUDED(mutex_);
+  void EndGame() ABSL_LOCKS_EXCLUDED(mutex_);
   void RunMany(ModelBatcher* other_batcher,
                const std::vector<const ModelInput*>& inputs,
                std::vector<ModelOutput*>* outputs, std::string* model_name);
-  BatchingModelStats FlushStats() LOCKS_EXCLUDED(&mutex_);
+  BatchingModelStats FlushStats() ABSL_LOCKS_EXCLUDED(mutex_);
 
  private:
-  size_t GetBatchSize() const EXCLUSIVE_LOCKS_REQUIRED(&mutex_);
+  size_t GetBatchSize() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  void MaybeRunBatchesLocked() EXCLUSIVE_LOCKS_REQUIRED(&mutex_);
-  void RunBatch() EXCLUSIVE_LOCKS_REQUIRED(&mutex_);
+  void MaybeRunBatchesLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  void RunBatch() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   absl::Mutex mutex_;
   std::unique_ptr<Model> model_impl_;
-  std::queue<InferenceRequest> queue_ GUARDED_BY(&mutex_);
-  BatchingModelStats stats_ GUARDED_BY(&mutex_);
+  std::queue<InferenceRequest> queue_ ABSL_GUARDED_BY(mutex_);
+  BatchingModelStats stats_ ABSL_GUARDED_BY(mutex_);
 
   // Number of clients of this batcher that are playing in a two player game
   // and are currently waiting for the other player to play a move. These
@@ -92,11 +94,11 @@ class ModelBatcher {
   std::atomic<size_t> num_waiting_{0};
 
   // Number of clients of this batcher that are currently playing a game.
-  size_t num_active_clients_ GUARDED_BY(&mutex_) = 0;
+  size_t num_active_clients_ ABSL_GUARDED_BY(mutex_) = 0;
 
   // Stats that get reported when the ModelBatcher is destroyed.
-  size_t num_batches_ GUARDED_BY(&mutex_) = 0;
-  size_t num_inferences_ GUARDED_BY(&mutex_) = 0;
+  size_t num_batches_ ABSL_GUARDED_BY(mutex_) = 0;
+  size_t num_inferences_ ABSL_GUARDED_BY(mutex_) = 0;
 };
 
 }  // namespace internal
@@ -149,7 +151,7 @@ class BatchingModelFactory {
 
   // Map from model to BatchingService for that model.
   absl::flat_hash_map<std::string, std::shared_ptr<internal::ModelBatcher>>
-      batchers_ GUARDED_BY(&mutex_);
+      batchers_ ABSL_GUARDED_BY(mutex_);
 
   const std::string device_;
   const int buffer_count_;

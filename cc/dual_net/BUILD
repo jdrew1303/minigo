@@ -53,7 +53,7 @@ minigo_cc_library(
         "//cc/file:path",
         "//cc/model",
         "//cc/model:factory",
-        "//cc/tensorflow",
+        "@libtensorflow//:tensorflow_c",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
@@ -82,22 +82,19 @@ minigo_cc_library(
 
 minigo_cc_library(
     name = "tpu_dual_net",
-    srcs = ["tpu_dual_net.cc"],
-    hdrs = ["tpu_dual_net.h"],
+    srcs = ["tf_dual_net.cc"], # Use tf_dual_net for now as dummy
+    hdrs = ["tf_dual_net.h"],
     tags = ["manual"],
     deps = [
         "//cc:base",
         "//cc:logging",
-        "//cc:random",
         "//cc/file:path",
         "//cc/model",
         "//cc/model:factory",
-        "//cc/tensorflow",
-        "@com_google_absl//absl/container:flat_hash_map",
+        "@libtensorflow//:tensorflow_c",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-        "@com_google_absl//absl/types:span",
         "@wtf",
     ],
 )

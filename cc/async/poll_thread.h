@@ -1,3 +1,5 @@
+#include "absl/base/thread_annotations.h"
+#include "absl/base/thread_annotations.h"
 // Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +21,7 @@
 #include <functional>
 #include <string>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/time/time.h"
 #include "cc/async/thread.h"
@@ -37,17 +40,16 @@ class PollThread : public Thread {
   void Join() override;
 
  private:
-  void Run() override LOCKS_EXCLUDED(&mutex_);
-  bool IsJoining() const EXCLUSIVE_LOCKS_REQUIRED(&mutex_);
+  void Run() override ABSL_LOCKS_EXCLUDED(mutex_);
+  bool IsJoining() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   const absl::Duration poll_interval_;
 
   absl::Mutex mutex_;
-  bool is_joining_ GUARDED_BY(&mutex_) = false;
-  std::function<void()> poll_fn_ GUARDED_BY(&mutex_);
+  bool is_joining_ ABSL_GUARDED_BY(mutex_) = false;
+  std::function<void()> poll_fn_ ABSL_GUARDED_BY(mutex_);
 };
 
 }  // namespace minigo
 
 #endif  // CC_ASYNC_POLLER_H_
-

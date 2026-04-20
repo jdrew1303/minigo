@@ -1,3 +1,5 @@
+#include "absl/base/thread_annotations.h"
+#include "absl/base/thread_annotations.h"
 // Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -87,7 +89,7 @@ class TpuDualNetFactory : public ModelFactory {
   std::string tpu_name_;
 
   absl::Mutex mutex_;
-  absl::flat_hash_map<std::string, LoadedModel> models_ GUARDED_BY(&mutex_);
+  absl::flat_hash_map<std::string, LoadedModel> models_ ABSL_GUARDED_BY(mutex_);
 };
 
 }  // namespace minigo

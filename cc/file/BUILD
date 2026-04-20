@@ -31,20 +31,6 @@ cc_library(
 )
 
 cc_library(
-    name = "utils_tf",
-    srcs = ["utils_tf.cc"],
-    hdrs = ["utils.h"],
-    tags = ["manual"],
-    deps = [
-        ":path",
-        "//cc:logging",
-        "//cc/platform",
-        "//cc/tensorflow",
-        "@com_google_absl//absl/strings",
-    ],
-)
-
-cc_library(
     name = "utils_no_tf",
     srcs = select({
         "@bazel_tools//src/conditions:windows": ["utils_windows.cc"],
@@ -67,12 +53,10 @@ cc_library(
     ],
     deps = [
         ":path",
+        ":utils_no_tf",
         "//cc/platform",
         "@com_google_absl//absl/strings",
-    ] + select({
-        "//cc/config:enable_tf": [":utils_tf"],
-        "//conditions:default": [":utils_no_tf"],
-    }),
+    ],
 )
 
 cc_test(

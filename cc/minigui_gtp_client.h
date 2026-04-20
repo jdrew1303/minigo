@@ -174,14 +174,14 @@ class MiniguiGtpClient : public GtpClient {
      private:
       void Run() override;
 
-      bool has_pending_value() const EXCLUSIVE_LOCKS_REQUIRED(&mutex_) {
+      bool has_pending_value() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
         return pending_.has_value();
       }
 
       absl::Mutex mutex_;
-      absl::optional<VariationTree::Node*> pending_ GUARDED_BY(&mutex_);
+      absl::optional<VariationTree::Node*> pending_ ABSL_GUARDED_BY(mutex_);
       std::unique_ptr<Game> game_;
-      std::unique_ptr<MctsPlayer> player_ GUARDED_BY(&mutex_);
+      std::unique_ptr<MctsPlayer> player_ ABSL_GUARDED_BY(mutex_);
       std::vector<MctsNode*> leaves_;
       ThreadSafeQueue<VariationTree::Node*>* eval_queue_;
     };

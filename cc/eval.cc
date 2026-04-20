@@ -1,3 +1,4 @@
+#include "absl/base/thread_annotations.h"
 // Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -135,7 +136,7 @@ class Evaluator {
     }
 
    private:
-    std::unique_ptr<Model> NewModelImpl() EXCLUSIVE_LOCKS_REQUIRED(&mutex_) {
+    std::unique_ptr<Model> NewModelImpl() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
       auto model = batcher_->NewModel(path_);
       if (name_.empty()) {
         name_ = model->name();
@@ -144,10 +145,10 @@ class Evaluator {
     }
 
     mutable absl::Mutex mutex_;
-    BatchingModelFactory* batcher_ GUARDED_BY(&mutex_);
+    BatchingModelFactory* batcher_ ABSL_GUARDED_BY(mutex_);
     const std::string path_;
-    std::string name_ GUARDED_BY(&mutex_);
-    WinStats win_stats_ GUARDED_BY(&mutex_);
+    std::string name_ ABSL_GUARDED_BY(mutex_);
+    WinStats win_stats_ ABSL_GUARDED_BY(mutex_);
     MctsPlayer::Options player_options_;
   };
 

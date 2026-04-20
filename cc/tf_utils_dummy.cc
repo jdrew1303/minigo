@@ -12,19 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cc/logging.h"
 #include "cc/tf_utils.h"
+#include "cc/logging.h"
 
 namespace minigo {
 namespace tf_utils {
 
 void WriteGameExamples(const std::string& output_dir,
                        const std::string& output_name,
-                       const FeatureDescriptor& feature_desc,
-                       const Game& game) {
-  MG_LOG(FATAL)
-      << "Can't write TensorFlow examples without TensorFlow support enabled. "
-         "Please recompile, passing --define=tf=1 to bazel build.";
+                       const FeatureDescriptor& feature_desc, const Game& game) {
+  MG_LOG(FATAL) << "WriteGameExamples not implemented";
+}
+
+void WriteGameExamples(const std::string& gcp_project_name,
+                       const std::string& instance_name,
+                       const std::string& table_name,
+                       const FeatureDescriptor& feature_desc, const Game& game) {
+  MG_LOG(FATAL) << "WriteGameExamples not implemented";
+}
+
+void WriteEvalRecord(const std::string& gcp_project_name,
+                     const std::string& instance_name,
+                     const std::string& table_name, const Game& game,
+                     const std::string& sgf_name, const std::string& tag) {
+  MG_LOG(FATAL) << "WriteEvalRecord not implemented";
+}
+
+uint64_t IncrementGameCounter(const std::string& gcp_project_name,
+                              const std::string& instance_name,
+                              const std::string& table_name,
+                              const std::string& counter_name, size_t delta) {
+  MG_LOG(FATAL) << "IncrementGameCounter not implemented";
+  return 0;
+}
+
+void PortGamesToBigtable(const std::string& gcp_project_name,
+                         const std::string& instance_name,
+                         const std::string& table_name,
+                         const std::vector<std::string>& paths,
+                         int64_t game_counter) {
+  MG_LOG(FATAL) << "PortGamesToBigtable not implemented";
 }
 
 }  // namespace tf_utils

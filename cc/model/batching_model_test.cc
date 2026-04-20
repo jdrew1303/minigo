@@ -1,3 +1,5 @@
+#include "absl/base/thread_annotations.h"
+#include "absl/base/thread_annotations.h"
 // Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -89,8 +91,8 @@ class WaitingModelFactory : public ModelFactory {
  private:
   const int buffer_count_;
   mutable absl::Mutex mutex_;
-  absl::flat_hash_map<std::string, WaitingModel*> models_ GUARDED_BY(&mutex_);
-  std::queue<EvaluatedBatch> batches_ GUARDED_BY(&mutex_);
+  absl::flat_hash_map<std::string, WaitingModel*> models_ ABSL_GUARDED_BY(mutex_);
+  std::queue<EvaluatedBatch> batches_ ABSL_GUARDED_BY(mutex_);
 };
 
 WaitingModel::WaitingModel(WaitingModelFactory* factory, std::string model_name)
