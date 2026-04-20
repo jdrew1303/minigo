@@ -203,7 +203,8 @@ def mg_conv2d(inputs, filters, kernel_size, data_format):
         kernel_size=kernel_size,
         padding='same',
         use_bias=False,
-        data_format=data_format)(inputs)
+        data_format=data_format,
+        kernel_regularizer=tf.keras.regularizers.l2(FLAGS.l2_strength))(inputs)
 
 
 def residual_inner(inputs, filters, bn_axis, data_format, training=None):
@@ -231,16 +232,22 @@ def mg_squeeze_excitation_layer(inputs, filters, bn_axis, data_format, training=
                               data_format, training=training)
     pool = tf.keras.layers.GlobalAveragePooling2D(
         data_format=data_format)(residual)
-    fc1 = tf.keras.layers.Dense(units=filters // ratio)(pool)
+    fc1 = tf.keras.layers.Dense(
+        units=filters // ratio,
+        kernel_regularizer=tf.keras.regularizers.l2(FLAGS.l2_strength))(pool)
     squeeze = mg_activation(fc1)
 
     if FLAGS.use_SE_bias:
-        fc2 = tf.keras.layers.Dense(units=2*filters)(squeeze)
+        fc2 = tf.keras.layers.Dense(
+            units=2*filters,
+            kernel_regularizer=tf.keras.regularizers.l2(FLAGS.l2_strength))(squeeze)
         def split_gamma_bias(x):
             return tf.split(x, 2, axis=-1)
         gamma, bias = tf.keras.layers.Lambda(split_gamma_bias)(fc2)
     else:
-        gamma = tf.keras.layers.Dense(units=filters)(squeeze)
+        gamma = tf.keras.layers.Dense(
+            units=filters,
+            kernel_regularizer=tf.keras.regularizers.l2(FLAGS.l2_strength))(squeeze)
         bias = 0
 
     sig = tf.keras.layers.Activation('sigmoid')(gamma)
@@ -248,8 +255,12 @@ def mg_squeeze_excitation_layer(inputs, filters, bn_axis, data_format, training=
     # Explicitly signal the broadcast.
     if data_format == 'channels_last':
         scale = tf.keras.layers.Reshape((1, 1, filters))(sig)
+        if FLAGS.use_SE_bias:
+            bias = tf.keras.layers.Reshape((1, 1, filters))(bias)
     else:
         scale = tf.keras.layers.Reshape((filters, 1, 1))(sig)
+        if FLAGS.use_SE_bias:
+            bias = tf.keras.layers.Reshape((filters, 1, 1))(bias)
 
     def multiply_and_add(args):
         scale, residual, bias = args
@@ -297,7 +308,9 @@ def get_model():
     policy_conv = mg_activation(policy_conv)
     policy_flat = tf.keras.layers.Flatten()(policy_conv)
     policy_logits = tf.keras.layers.Dense(
-        go.N * go.N + 1, name='policy_logits')(policy_flat)
+        go.N * go.N + 1,
+        kernel_regularizer=tf.keras.regularizers.l2(FLAGS.l2_strength),
+        name='policy_logits')(policy_flat)
     policy_output = tf.keras.layers.Softmax(name='policy_output')(policy_logits)
 
     # Value head
@@ -305,10 +318,15 @@ def get_model():
     value_conv = mg_batchn(value_conv, bn_axis, center=False, scale=False)
     value_conv = mg_activation(value_conv)
     value_flat = tf.keras.layers.Flatten()(value_conv)
-    value_fc_hidden = tf.keras.layers.Dense(FLAGS.fc_width)(value_flat)
+    value_fc_hidden = tf.keras.layers.Dense(
+        FLAGS.fc_width,
+        kernel_regularizer=tf.keras.regularizers.l2(FLAGS.l2_strength))(value_flat)
     value_fc_hidden = mg_activation(value_fc_hidden)
     value_output = tf.keras.layers.Dense(
-        1, activation='tanh', name='value_output')(value_fc_hidden)
+        1,
+        activation='tanh',
+        kernel_regularizer=tf.keras.regularizers.l2(FLAGS.l2_strength),
+        name='value_output')(value_fc_hidden)
 
     return tf.keras.Model(inputs=inputs, outputs=[policy_output, value_output])
 
